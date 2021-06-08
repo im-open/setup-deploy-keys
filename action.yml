@@ -1,0 +1,15 @@
+name: "Setup Deploy Keys"
+
+description: 'Run `ssh-agent` and load SSH key(s) to access other private repositories'
+inputs:
+  deploy-key-info:
+    description: 'An array of deploy key info objects that contain the org/repo that the deploy key is intended for as well as the name of the environment variable that contains the private key's value.'
+    required: true
+runs:
+  using: 'node12'
+  main: 'dist/index.js'
+  post: 'dist/cleanup.js'
+  post-if: 'always()'
+branding:
+  icon: loader
+  color: 'yellow'
