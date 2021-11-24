@@ -292,9 +292,9 @@ var require_core = __commonJS({
   }
 });
 
-// paths.js
+// src/paths.js
 var require_paths = __commonJS({
-  'paths.js'(exports2, module2) {
+  'src/paths.js'(exports2, module2) {
     var os = require('os');
     module2.exports =
       process.env['OS'] != 'Windows_NT'
@@ -311,7 +311,7 @@ var require_paths = __commonJS({
   }
 });
 
-// main.js
+// src/main.js
 var core = require_core();
 var child_process = require('child_process');
 var fs = require('fs');
