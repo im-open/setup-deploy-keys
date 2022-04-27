@@ -49,7 +49,7 @@ jobs:
           uses: actions/checkout@v2
   
         - name: Setup deploy keys for use with Terraform
-          uses: im-open/setup-deploy-keys@v1.0.3
+          uses: im-open/setup-deploy-keys@v1.0.5
           with:
             deploy-key-info: |
               [
