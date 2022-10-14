@@ -46,7 +46,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
         - name: Checkout Repository
-          uses: actions/checkout@v2
+          uses: actions/checkout@v3
   
         - name: Setup deploy keys for use with Terraform
           uses: im-open/setup-deploy-keys@v1.0.6
