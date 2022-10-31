@@ -737,9 +737,9 @@ var require_file_command = __commonJS({
   }
 });
 
-// node_modules/@actions/core/node_modules/@actions/http-client/lib/proxy.js
+// node_modules/@actions/http-client/lib/proxy.js
 var require_proxy = __commonJS({
-  'node_modules/@actions/core/node_modules/@actions/http-client/lib/proxy.js'(exports2) {
+  'node_modules/@actions/http-client/lib/proxy.js'(exports2) {
     'use strict';
     Object.defineProperty(exports2, '__esModule', { value: true });
     exports2.checkBypass = exports2.getProxyUrl = void 0;
@@ -1032,9 +1032,9 @@ var require_tunnel2 = __commonJS({
   }
 });
 
-// node_modules/@actions/core/node_modules/@actions/http-client/lib/index.js
+// node_modules/@actions/http-client/lib/index.js
 var require_lib = __commonJS({
-  'node_modules/@actions/core/node_modules/@actions/http-client/lib/index.js'(exports2) {
+  'node_modules/@actions/http-client/lib/index.js'(exports2) {
     'use strict';
     var __createBinding =
       (exports2 && exports2.__createBinding) ||
@@ -1667,9 +1667,9 @@ var require_lib = __commonJS({
   }
 });
 
-// node_modules/@actions/core/node_modules/@actions/http-client/lib/auth.js
+// node_modules/@actions/http-client/lib/auth.js
 var require_auth = __commonJS({
-  'node_modules/@actions/core/node_modules/@actions/http-client/lib/auth.js'(exports2) {
+  'node_modules/@actions/http-client/lib/auth.js'(exports2) {
     'use strict';
     var __awaiter =
       (exports2 && exports2.__awaiter) ||
@@ -2455,12 +2455,16 @@ var fs = require('fs');
 var crypto = require('crypto');
 var { home, sshAgent, sshAdd } = require_paths();
 var homeSsh = home + '/.ssh';
+var requiredArgOptions = {
+  required: true,
+  trimWhitespace: true
+};
 try {
-  const deployKeyInfoInput = core.getInput('deploy-key-info');
+  const deployKeyInfoInput = core.getInput('deploy-key-info', requiredArgOptions);
   const deployKeyInfoList = JSON.parse(deployKeyInfoInput);
   if (!deployKeyInfoList) {
     core.setFailed(
-      'The deploy-key-info argument is empty. Maybe you are using a wrong secret name in your workflow file.'
+      'The deploy-key-info argument is empty. Was the wrong secret name used in your workflow file?'
     );
     return;
   }
@@ -2524,9 +2528,9 @@ Host key-${sha256}.github.com
     );
     core.endGroup();
   });
-  console.log('\nFingerprints of Key(s) added:');
+  core.info('\nFingerprints of Key(s) added:');
   child_process.execFileSync(sshAdd, ['-l'], { stdio: 'inherit' });
-  console.log('\nPublic key parameters of Key(s) added:');
+  core.info('\nPublic key parameters of Key(s) added:');
   child_process.execFileSync(sshAdd, ['-L'], { stdio: 'inherit' });
 } catch (error) {
   if (error.code == 'ENOENT') {
