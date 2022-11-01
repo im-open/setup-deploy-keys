@@ -6,14 +6,20 @@ const { home, sshAgent, sshAdd } = require('./paths.js');
 
 const homeSsh = home + '/.ssh';
 
+// When used, this requiredArgOptions will cause the action to error if a value has not been provided.
+const requiredArgOptions = {
+  required: true,
+  trimWhitespace: true
+};
+
 try {
-  const deployKeyInfoInput = core.getInput('deploy-key-info');
+  const deployKeyInfoInput = core.getInput('deploy-key-info', requiredArgOptions);
   const deployKeyInfoList = JSON.parse(deployKeyInfoInput);
 
   //Validate the arguments
   if (!deployKeyInfoList) {
     core.setFailed(
-      'The deploy-key-info argument is empty. Maybe you are using a wrong secret name in your workflow file.'
+      'The deploy-key-info argument is empty. Was the wrong secret name used in your workflow file?'
     );
     return;
   }
@@ -93,10 +99,10 @@ try {
     core.endGroup();
   });
 
-  console.log('\nFingerprints of Key(s) added:');
+  core.info('\nFingerprints of Key(s) added:');
   child_process.execFileSync(sshAdd, ['-l'], { stdio: 'inherit' });
 
-  console.log('\nPublic key parameters of Key(s) added:');
+  core.info('\nPublic key parameters of Key(s) added:');
   child_process.execFileSync(sshAdd, ['-L'], { stdio: 'inherit' });
 } catch (error) {
   if (error.code == 'ENOENT') {
