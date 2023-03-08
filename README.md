@@ -49,6 +49,7 @@ jobs:
           uses: actions/checkout@v3
   
         - name: Setup deploy keys for use with Terraform
+          # You may also reference just the major or major.minor version
           uses: im-open/setup-deploy-keys@v1.1.2
           with:
             deploy-key-info: |
