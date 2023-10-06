@@ -1,0 +1,5 @@
+
+Host REPLACEME.github.com
+    HostName github.com
+    IdentityFile /home/runner/.ssh/REPLACEME
+    IdentitiesOnly yes

@@ -60,3 +60,284 @@ jobs:
       # The npm script to run to build the action.  This is typically 'npm run build' if the
       # action needs to be compiled.  For composite-run-steps actions this is typically empty.
       build-command: 'npm run build'
+
+  test:
+    runs-on: ubuntu-latest
+
+    env:
+      ORG: 'im-open'
+      THIS_REPO: 'setup-deploy-keys'
+      INTERNAL_REPO_TO_CLONE: 'im-open/ssh-key-testing'
+      INTERNAL_REPO_TO_CLONE_DIR: 'ssh-key-testing'
+
+      # The private key which will be used to clone the internal & empty deploy-keys-testing repo.
+      # The repo does not contain anything sensitive, it is just marked as internal so the key can be tested here.
+      # This SSH key was generated as a readonly key (so no push abilities).
+      INTERNAL_REPO_TO_CLONE_KEY: ${{ secrets.SSH_KEY_TESTING_REPO }}
+      SSH_DEPLOY_KEY_INFO: |
+        [
+          { "orgAndRepo": "im-open/ssh-key-testing", "envName" : "INTERNAL_REPO_TO_CLONE_KEY" }
+        ]
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          persist-credentials: false
+
+      #--------------------------------------
+      # SETUP
+      #--------------------------------------
+      - name: '-------------------------------------------------------------------------------------------------------'
+        run: echo ""
+
+      - name: Setup - Verify the internal repo to clone dir does not exist
+        if: always()
+        run: ./test/assert-dir-does-not-exist.sh --path "./${{ env.INTERNAL_REPO_TO_CLONE_DIR }}"
+
+      - name: Setup - Verify the ssh-agent is not running
+        if: always()
+        run: ./test/assert-ssh-agent-is-not-running.sh
+
+      - name: Setup - Verify .gitconfig does not contain any insteadOf urls (because it does not exist)
+        if: always()
+        run: |
+          if [ -f "~/.gitconfig" ]
+          then
+            echo "The .gitconfig file exists which is unexpected"
+            exit 1
+          else
+            echo "The .gitconfig file does not exist which is expected.  No insteadOf rules exist."
+            exit 0
+          fi
+
+      - name: Setup - Verify the ssh config has no configuration (because it does not exist)
+        working-directory: /home/runner
+        if: always()
+        run: |
+          TARGET_FILE=".ssh/config"
+
+          if [ -f "$TARGET_FILE" ]
+          then
+            echo "$TARGET_FILE exists which is NOT expected.  Contents:"
+            cat $TARGET_FILE
+            exit 1
+          else
+            echo "$TARGET_FILE does not exist which is expected."
+          fi
+
+      #--------------------------------------------
+      # VALIDATE STARTING CONDITIONS/NO PERMISSIONS
+      #--------------------------------------------
+      - name: '-------------------------------------------------------------------------------------------------------'
+        run: echo ""
+
+      - name: When an internal repo is cloned with the default PAT
+        if: always()
+        id: internal-failure
+        continue-on-error: true # This is needed because we expect the step to fail.  We need it to "pass" in order for the test job to succeed.
+        run: git clone git@github.com:${{ env.INTERNAL_REPO_TO_CLONE }}.git
+
+      - name: Then the outcome should be failure because of lack of permissions to clone an internal repo
+        if: always()
+        run: ./test/assert-values-match.sh --name "step outcome" --expected "failure" --actual "${{ steps.internal-failure.outcome }}"
+
+      - name: And the directory for the internal repo to clone should not exist
+        if: always()
+        run: ./test/assert-dir-does-not-exist.sh --path "./${{ env.INTERNAL_REPO_TO_CLONE_DIR }}"
+
+      - name: And the ssh-agent should be running
+        if: always()
+        run: ./test/assert-ssh-agent-is-running.sh
+
+      #--------------------------------------------
+      # SETUP DEPLOY KEYS AND CLONE INTERNAL REPO
+      #--------------------------------------------
+      - name: '-------------------------------------------------------------------------------------------------------'
+        run: echo ""
+
+      - name: When setup-deploy-keys is run with a key for the internal repo
+        if: always()
+        id: setup-deploy-keys
+        uses: ./
+        with:
+          deploy-key-info: ${{ env.SSH_DEPLOY_KEY_INFO }}
+
+      - name: And the internal repo is cloned
+        if: always()
+        id: internal-success
+        run: git clone git@github.com:${{ env.INTERNAL_REPO_TO_CLONE }}.git
+
+      - name: Then the outcome should be success
+        if: always()
+        run: ./test/assert-values-match.sh --name "step outcome" --expected "success" --actual "${{ steps.internal-success.outcome }}"
+
+      - name: And the ssh-agent should be running
+        if: always()
+        run: ./test/assert-ssh-agent-is-running.sh
+
+      - name: And the directory for the internal repo to clone dir should exist
+        if: always()
+        run: ./test/assert-dir-exists.sh --path "./${{ env.INTERNAL_REPO_TO_CLONE_DIR }}"
+
+      - name: And the .gitconfig should exist with 3 entries for ${{ env.INTERNAL_REPO_TO_CLONE }} insteadOf urls
+        if: always()
+        run: |
+          configEntries=$(git config --get-regexp "${{ steps.setup-deploy-keys.outputs.key-filename }}")
+          count=0
+          while IFS=$'\n' read -ra ENTRIES; do
+            for i in "${ENTRIES[@]}"; do
+              count=$((count+1))
+              echo -e "\nEntry $count: '$i'"
+            done
+          done <<< "$configEntries"
+
+          if [ $count -ne 3 ]
+          then
+            echo -e "\nExpected 3 insteadOf entries in .gitconfig but found $count"  
+            exit 1
+          else 
+            echo -e "\nThere were 3 insteadOf entries in the .gitconfig as expected."
+          fi
+
+      - name: And the ssh config should exist with an entry for ${{ env.INTERNAL_REPO_TO_CLONE }}
+        if: always()
+        run: |
+
+          TARGET_FILE="/home/runner/.ssh/config"
+
+          if [ -f "$TARGET_FILE" ]
+          then
+            echo "$TARGET_FILE exists which is expected."
+            actualContent=$(cat $TARGET_FILE)
+          else
+            echo "$TARGET_FILE does not exist which is not expected"
+            exit 1
+          fi
+
+          rawExpectedContent=$(cat ./test/files/expected-ssh-host.txt)
+          hostKey="${{ steps.setup-deploy-keys.outputs.key-filename }}"
+          expectedContent=$(echo "${rawExpectedContent//REPLACEME/"$hostKey"}" )
+
+          ./test/assert-values-match.sh --name "ssh config" --expected "$expectedContent" --actual "$actualContent"
+
+      #--------------------------------------------
+      # UN-PARSEABLE INPUT
+      #--------------------------------------------
+      - name: '-------------------------------------------------------------------------------------------------------'
+        run: echo ""
+
+      - name: When setup-deploy-keys is run with an un-parseable input
+        uses: ./
+        if: always()
+        id: unparseable
+        continue-on-error: true # This is needed because we expect the step to fail.  We need it to "pass" in order for the test job to succeed.
+        with:
+          deploy-key-info: '[ orgAndRepo=im-open/ssh-key-testing, envName=INTERNAL_REPO_TO_CLONE_KEY ]'
+
+      - name: Then the outcome should be failure
+        if: always()
+        run: ./test/assert-values-match.sh --name "step outcome" --expected "failure" --actual "${{ steps.unparseable.outcome }}"
+
+      - name: And the validation-error output should be 'argument-parsing'
+        if: always()
+        run: ./test/assert-values-match.sh --name "validation-error" --expected "argument-parsing" --actual "${{ steps.unparseable.outputs.validation-error }}"
+
+      #--------------------------------------------
+      # EMPTY ARRAY
+      #--------------------------------------------
+      - name: '-------------------------------------------------------------------------------------------------------'
+        run: echo ""
+
+      - name: When setup-deploy-keys is run with an empty array
+        uses: ./
+        if: always()
+        id: empty-array
+        continue-on-error: true # This is needed because we expect the step to fail.  We need it to "pass" in order for the test job to succeed.
+        with:
+          deploy-key-info: '[]'
+
+      - name: Then the outcome should be failure
+        if: always()
+        run: ./test/assert-values-match.sh --name "step outcome" --expected "failure" --actual "${{ steps.empty-array.outcome }}"
+
+      - name: And the validation-error output should be 'empty-keys'
+        if: always()
+        run: ./test/assert-values-match.sh --name "validation-error" --expected "empty-keys" --actual "${{ steps.empty-array.outputs.validation-error }}"
+
+      #--------------------------------------------
+      # EMPTY orgAndRepo ARG
+      #--------------------------------------------
+      - name: '-------------------------------------------------------------------------------------------------------'
+        run: echo ""
+
+      - name: When setup-deploy-keys is run with a missing orgAndRepo
+        uses: ./
+        if: always()
+        id: missing-orgAndRepo
+        continue-on-error: true # This is needed because we expect the step to fail.  We need it to "pass" in order for the test job to succeed.
+        with:
+          deploy-key-info: |
+            [
+              { "orgAndRepo": "", "envName" : "INTERNAL_REPO_TO_CLONE_KEY" }
+            ]
+
+      - name: Then the outcome should be failure
+        if: always()
+        run: ./test/assert-values-match.sh --name "step outcome" --expected "failure" --actual "${{ steps.missing-orgAndRepo.outcome }}"
+
+      - name: And the validation-error output should be 'missing-orgAndRepo'
+        if: always()
+        run: ./test/assert-values-match.sh --name "validation-error" --expected "missing-orgAndRepo" --actual "${{ steps.missing-orgAndRepo.outputs.validation-error }}"
+
+      #--------------------------------------------
+      # EMPTY envName ARG
+      #--------------------------------------------
+      - name: '-------------------------------------------------------------------------------------------------------'
+        run: echo ""
+
+      - name: When setup-deploy-keys is run with a missing envName
+        uses: ./
+        if: always()
+        id: missing-envName
+        continue-on-error: true # This is needed because we expect the step to fail.  We need it to "pass" in order for the test job to succeed.
+        with:
+          deploy-key-info: |
+            [
+              { "orgAndRepo": "im-open/ssh-key-testing", "envName" : "" }
+            ]
+
+      - name: Then the outcome should be failure
+        if: always()
+        run: ./test/assert-values-match.sh --name "step outcome" --expected "failure" --actual "${{ steps.missing-envName.outcome }}"
+
+      - name: And the validation-error output should be 'missing-envName'
+        if: always()
+        run: ./test/assert-values-match.sh --name "validation-error" --expected "missing-envName" --actual "${{ steps.missing-envName.outputs.validation-error }}"
+
+      #--------------------------------------------
+      # UNPOPULATED ENV VAR FOR SECRET
+      #--------------------------------------------
+      - name: '-------------------------------------------------------------------------------------------------------'
+        run: echo ""
+
+      - name: When setup-deploy-keys is run with an unpopulated env var
+        uses: ./
+        if: always()
+        id: unpopulated-env
+        continue-on-error: true # This is needed because we expect the step to fail.  We need it to "pass" in order for the test job to succeed.
+        with:
+          deploy-key-info: |
+            [
+              { "orgAndRepo": "im-open/ssh-key-testing", "envName" : "UNPOPULATED_ENV_VARIABLE" }
+            ]
+
+      - name: Then the outcome should be failure
+        if: always()
+        run: ./test/assert-values-match.sh --name "step outcome" --expected "failure" --actual "${{ steps.unpopulated-env.outcome }}"
+
+      - name: And the validation-error output should be 'unpopulated-env-var'
+        if: always()
+        run: ./test/assert-values-match.sh --name "validation-error" --expected "unpopulated-env-var" --actual "${{ steps.unpopulated-env.outputs.validation-error }}"
+
+      - name: '-------------------------------------------------------------------------------------------------------'
+        run: echo ""

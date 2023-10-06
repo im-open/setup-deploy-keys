@@ -10,7 +10,7 @@ This modified action will take care of:
 - Adding `insteadOf` rules in the git config.  These rules will rewrite git urls it encounters for the provided org/repo and point to the applicable alias entry that was added to the ssh config.  This will ensure it uses the right deploy key when interacting with different private repositories.
 
 These entries and `insteadOf` rules are necessary when using multiple deploy keys because of the way GitHub handles requests. From [webfactory/ssh-agent]:
-> When using Github deploy keys, GitHub servers will accept the first known key. But since deploy keys are scoped to a single repository, this might not be the key needed to access a particular repository. Thus, you will get the error message fatal: Could not read from remote repository. Please make sure you have the correct access rights and the repository exists. if the wrong key/repository combination is tried.
+> When using Github deploy keys, GitHub servers will accept the first known key. But since deploy keys are scoped to a single repository, this might not be the key needed to access a particular repository. Thus, you will get the error message fatal: "*Could not read from remote repository. Please make sure you have the correct access rights and the repository exists*" if the wrong key/repository combination is tried.
 
 More details on context, usage, troubleshooting or known issues and limitations can be found on the original repository [webfactory/ssh-agent].
 
@@ -18,6 +18,8 @@ More details on context, usage, troubleshooting or known issues and limitations 
 
 - [Setup Deploy Keys](#setup-deploy-keys)
   - [Inputs](#inputs)
+  - [Outputs](#outputs)
+    - [validation-error Output](#validation-error-output)
   - [Usage Examples](#usage-examples)
   - [Contributing](#contributing)
     - [Incrementing the Version](#incrementing-the-version)
@@ -32,6 +34,33 @@ More details on context, usage, troubleshooting or known issues and limitations 
 | Parameter         | Is Required | Description                                                                                                                                                                              |
 |-------------------|-------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `deploy-key-info` | true        | An array of deploy key info objects that contain the org/repo that the deploy key is intended for as well as the name of the environment variable that contains the private key's value. |
+
+## Outputs
+
+This action has two outputs which can be used by the workflows but are generally reserved for testing.
+| Output             | Description                                                                                                                                                                                                |
+|--------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `validation-error` | A string with a short description of a validation error that occurred.  Generally used for testing but can be used programmatically to detect which types of validation errors the action is encountering. |
+| `key-filename`     | The name of the file where the key was written to disk.  Generally used for testing because the output only reflects the last key that was processed.                                                      |
+
+### validation-error Output
+
+The `validation-error` output will only contain one validation error at a time.  If multiple keys or multiple error conditions exist, this output cannot reliably indicate those conditions.  The output was designed to be used for testing specific error conditions and may not be suitable for regular production use.
+
+- `argument-parsing` - This occurs when there is an error JSON parsing the `deploy-key-info` argument.  It should be a string containing a parseable JSON array of objects that contain two arguments:
+  ```yml
+  [
+    # orgAndRepo should contain the organization/repository that the deploy key is being setup for.
+    # envName is the name of an environment variable that contains the private key for accessing
+    #         the orgAndRepo.  It is not the value of the actual environment variable.
+    { orgAndRepo: 'im-open/repo-1', envName: 'NAME_OF_ENV_WITH_PRIVATE_KEY_1'},
+    { orgAndRepo: 'im-open/repo-2', envName: 'NAME_OF_ENV_WITH_PRIVATE_KEY_2'}
+  ]
+  ```
+- `empty-keys` - The `deploy-key-info` argument was an empty array.
+- `missing-orgAndRepo` - One of the provided deploy keys is missing the `orgAndRepo` argument.
+- `missing-envName` - One of the provided deploy keys is missing the `envName` argument.
+- `unpopulated-env-var` - One of the environment variables provided as an `envName` has not been populated.
 
 ## Usage Examples
 
@@ -54,7 +83,7 @@ jobs:
   
         - name: Setup deploy keys for use with Terraform
           # You may also reference just the major or major.minor version
-          uses: im-open/setup-deploy-keys@v1.1.3
+          uses: im-open/setup-deploy-keys@v1.1.4
           with:
             deploy-key-info: |
               [
