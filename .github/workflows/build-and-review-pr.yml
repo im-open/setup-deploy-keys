@@ -67,8 +67,8 @@ jobs:
     env:
       ORG: 'im-open'
       THIS_REPO: 'setup-deploy-keys'
-      INTERNAL_REPO_TO_CLONE: 'im-open/ssh-key-testing'
-      INTERNAL_REPO_TO_CLONE_DIR: 'ssh-key-testing'
+      INTERNAL_REPO_TO_CLONE: 'im-open/internal-repo-for-testing'
+      INTERNAL_REPO_TO_CLONE_DIR: 'internal-repo-for-testing'
 
       # The private key which will be used to clone the internal & empty deploy-keys-testing repo.
       # The repo does not contain anything sensitive, it is just marked as internal so the key can be tested here.
@@ -76,7 +76,7 @@ jobs:
       INTERNAL_REPO_TO_CLONE_KEY: ${{ secrets.SSH_KEY_TESTING_REPO }}
       SSH_DEPLOY_KEY_INFO: |
         [
-          { "orgAndRepo": "im-open/ssh-key-testing", "envName" : "INTERNAL_REPO_TO_CLONE_KEY" }
+          { "orgAndRepo": "im-open/internal-repo-for-testing", "envName" : "INTERNAL_REPO_TO_CLONE_KEY" }
         ]
 
     steps:
@@ -232,7 +232,7 @@ jobs:
         id: unparseable
         continue-on-error: true # This is needed because we expect the step to fail.  We need it to "pass" in order for the test job to succeed.
         with:
-          deploy-key-info: '[ orgAndRepo=im-open/ssh-key-testing, envName=INTERNAL_REPO_TO_CLONE_KEY ]'
+          deploy-key-info: '[ orgAndRepo=im-open/internal-repo-for-testing, envName=INTERNAL_REPO_TO_CLONE_KEY ]'
 
       - name: Then the outcome should be failure
         if: always()
@@ -303,7 +303,7 @@ jobs:
         with:
           deploy-key-info: |
             [
-              { "orgAndRepo": "im-open/ssh-key-testing", "envName" : "" }
+              { "orgAndRepo": "im-open/internal-repo-for-testing", "envName" : "" }
             ]
 
       - name: Then the outcome should be failure
@@ -328,7 +328,7 @@ jobs:
         with:
           deploy-key-info: |
             [
-              { "orgAndRepo": "im-open/ssh-key-testing", "envName" : "UNPOPULATED_ENV_VARIABLE" }
+              { "orgAndRepo": "im-open/internal-repo-for-testing", "envName" : "UNPOPULATED_ENV_VARIABLE" }
             ]
 
       - name: Then the outcome should be failure
