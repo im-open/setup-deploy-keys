@@ -80,15 +80,14 @@ jobs:
         ]
 
     steps:
-      - uses: actions/checkout@v3
-        with:
-          persist-credentials: false
-
       #--------------------------------------
       # SETUP
       #--------------------------------------
       - name: '-------------------------------------------------------------------------------------------------------'
         run: echo ""
+
+      - name: Setup - Checkout the action
+        uses: actions/checkout@v3
 
       - name: Setup - Verify the internal repo to clone dir does not exist
         if: always()
