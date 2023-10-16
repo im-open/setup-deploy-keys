@@ -1,3 +1,7 @@
+# Tests
+
+Force tests to run from a fork to see what happens
+
 # Setup Deploy Keys
 
 A GitHub Action that enables the use of one or more deploy keys in order to access other private repositories. This action is based on [webfactory/ssh-agent] but has been modified to just handle deploy keys.
