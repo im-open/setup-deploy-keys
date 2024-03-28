@@ -67,8 +67,8 @@ jobs:
     env:
       ORG: 'im-open'
       THIS_REPO: 'setup-deploy-keys'
-      INTERNAL_REPO_TO_CLONE: 'im-open/internal-repo-for-testing'
-      INTERNAL_REPO_TO_CLONE_DIR: 'internal-repo-for-testing'
+      INTERNAL_REPO_TO_CLONE: 'im-open/internal-repo-for-testing-purple-actions'
+      INTERNAL_REPO_TO_CLONE_DIR: 'internal-repo-for-testing-purple-actions'
 
       # The private key which will be used to clone the internal & empty deploy-keys-testing repo.
       # The repo does not contain anything sensitive, it is just marked as internal so the key can be tested here.
@@ -76,7 +76,7 @@ jobs:
       INTERNAL_REPO_TO_CLONE_KEY: ${{ secrets.SSH_KEY_TESTING_REPO }}
       SSH_DEPLOY_KEY_INFO: |
         [
-          { "orgAndRepo": "im-open/internal-repo-for-testing", "envName" : "INTERNAL_REPO_TO_CLONE_KEY" }
+          { "orgAndRepo": "im-open/internal-repo-for-testing-purple-actions", "envName" : "INTERNAL_REPO_TO_CLONE_KEY" }
         ]
 
     steps:
@@ -200,9 +200,9 @@ jobs:
 
           if [ $count -ne 3 ]
           then
-            echo -e "\nExpected 3 insteadOf entries in .gitconfig but found $count"  
+            echo -e "\nExpected 3 insteadOf entries in .gitconfig but found $count"
             exit 1
-          else 
+          else
             echo -e "\nThere were 3 insteadOf entries in the .gitconfig as expected."
           fi
 
@@ -239,7 +239,7 @@ jobs:
         id: unparseable
         continue-on-error: true # This is needed because we expect the step to fail.  We need it to "pass" in order for the test job to succeed.
         with:
-          deploy-key-info: '[ orgAndRepo=im-open/internal-repo-for-testing, envName=INTERNAL_REPO_TO_CLONE_KEY ]'
+          deploy-key-info: '[ orgAndRepo=im-open/internal-repo-for-testing-purple-actions, envName=INTERNAL_REPO_TO_CLONE_KEY ]'
 
       - name: Then the outcome should be failure
         if: always()
@@ -310,7 +310,7 @@ jobs:
         with:
           deploy-key-info: |
             [
-              { "orgAndRepo": "im-open/internal-repo-for-testing", "envName" : "" }
+              { "orgAndRepo": "im-open/internal-repo-for-testing-purple-actions", "envName" : "" }
             ]
 
       - name: Then the outcome should be failure
@@ -335,7 +335,7 @@ jobs:
         with:
           deploy-key-info: |
             [
-              { "orgAndRepo": "im-open/internal-repo-for-testing", "envName" : "UNPOPULATED_ENV_VARIABLE" }
+              { "orgAndRepo": "im-open/internal-repo-for-testing-purple-actions", "envName" : "UNPOPULATED_ENV_VARIABLE" }
             ]
 
       - name: Then the outcome should be failure
