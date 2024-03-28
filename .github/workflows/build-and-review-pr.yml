@@ -68,7 +68,7 @@ jobs:
       ORG: 'im-open'
       THIS_REPO: 'setup-deploy-keys'
       INTERNAL_REPO_TO_CLONE: 'im-open/internal-repo-for-testing-purple-actions'
-      INTERNAL_REPO_TO_CLONE_DIR: 'internal-repo-for-testing'
+      INTERNAL_REPO_TO_CLONE_DIR: 'internal-repo-for-testing-purple-actions'
 
       # The private key which will be used to clone the internal & empty deploy-keys-testing repo.
       # The repo does not contain anything sensitive, it is just marked as internal so the key can be tested here.
