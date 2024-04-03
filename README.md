@@ -86,7 +86,7 @@ jobs:
   
         - name: Setup deploy keys for use with Terraform
           # You may also reference just the major or major.minor version
-          uses: im-open/setup-deploy-keys@v1.1.4
+          uses: im-open/setup-deploy-keys@v1.2.0
           with:
             deploy-key-info: |
               [
@@ -97,7 +97,7 @@ jobs:
     
         - name: Setup Terraform
           id: setup
-          uses: hashicorp/setup-terraform@v1.2.1
+          uses: hashicorp/setup-terraform@v3
           with:
             terraform_version: ~>0.15.0
         
