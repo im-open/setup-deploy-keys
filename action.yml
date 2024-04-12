@@ -14,7 +14,7 @@ outputs:
     description: 'A string with a short description of a validation error that occurred.  Generally used for testing but can be used programmatically to detect which types of validation errors the action is encountering.'
   key-filename:
     description: 'The name of the file where the key was written to disk.  Generally used for testing because the output would only reflect the last key that was processed.'
-    
+
 runs:
   using: 'node20'
   main: 'dist/index.js'
