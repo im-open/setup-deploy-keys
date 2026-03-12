@@ -86,7 +86,7 @@ jobs:
 
         - name: Setup deploy keys for use with Terraform
           # You may also reference just the major or major.minor version
-          uses: im-open/setup-deploy-keys@v1.2.0
+          uses: im-open/setup-deploy-keys@v1.2.1
           with:
             deploy-key-info: |
               [
